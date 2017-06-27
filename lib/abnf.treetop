@@ -1,0 +1,160 @@
+grammar ABNF
+  rule rulelist
+    ( abnf_rule / empty_line )+ { def ast() elements.map {|e| e.ast }.compact end }
+  end
+  rule empty_line
+    c_wsp* c_nl                 { def ast() nil end }
+  end
+  rule abnf_rule
+    rulename defined_as alternation c_nl { def ast() [defined_as.ast, rulename.ast, alternation.ast] end}
+  end
+  rule rulename
+    ALPHA ( ALPHA / DIGIT / "-" )*     {def ast() text_value end}
+  end
+  rule defined_as
+    c_wsp* ( "=" / "=/" ) c_wsp*    {def ast() elements[1].text_value end}
+  end
+  rule c_wsp
+    (WSP / ( c_nl WSP ))              { def ast() nil end }
+  end
+  rule c_nl
+    (comment / CRLF)              { def ast() nil end }
+  end
+  rule comment
+    ";" ( WSP / VCHAR )* CRLF       { def ast() nil end }
+
+  end
+  rule alternation
+    (concatenation ( "/" c_wsp* concatenation )*) { def ast
+                                                      conc2 = elements[1].elements.map {|x| x.concatenation}
+                                                      # warn ["alt!!!", concatenation, conc2].inspect
+                                                      e = [elements[0], *conc2].map {|e| e.ast}.compact
+                                                      e.size == 1 ? e[0] : ["alt", *e]
+                                                    end }
+  end
+  rule concatenation
+    (repetition ( c_wsp+ repetition )* c_wsp*) inline_module {
+      def ast
+        rep2 = elements[0].elements[1].elements.map {|x| x.repetition}
+        # warn ["seq!!!", elements.size, elements[0], "bar", elements[1].elements].inspect
+        e = [elements[0].elements[0], *rep2].map {|e| e.ast}.compact
+        inline_module.ast_wrap(e.size == 1 ? e[0] : ["seq", *e])
+      end
+      def clean_abnf
+        elements[0].clean_abnf
+      end
+    }
+  end
+  rule repetition
+    repeat_c element                          { def ast
+                                                  elements[0].ast_wrap(element.ast)
+                                               end }
+  end
+  rule repeat_c
+    (( DIGIT* "*" DIGIT* ) / DIGIT*)            { def ast_wrap(a)
+                                                    s = 1
+                                                    e = 1
+                                                    el = elements.map {|e| e.text_value}
+                                                    if el[1] == "*"
+                                                      if el[0] != ""
+                                                        s = el[0].to_i
+                                                      else
+                                                        s = 0
+                                                      end
+                                                      if el[2] != ""
+                                                        e = el[2].to_i
+                                                      else
+                                                        e = true
+                                                      end
+                                                    end
+                                                    occ = [s, e]
+                                                    if occ == [1, 1]
+                                                      a
+                                                    else
+                                                      ["rep", s, e, a]
+                                                    end
+                                                end}
+    # turned around for PEG, made optional
+  end
+  rule element
+    rulename / group / option / char_val / num_val / prose_val {def ast() elements[0].ast end }
+  end
+  rule group
+    "(" c_wsp* alternation ")" {def ast() alternation.ast end}
+  end
+  rule option
+    "[" c_wsp* alternation "]" {def ast() ["rep", 0, 1, alternation.ast] end}
+  end
+  rule num_val
+    "%" a:( bin_val / dec_val / hex_val )  {def ast() a.ast end}
+  end
+  rule bin_val
+    "b" a:BIT+ ( b:( "." BIT+ )+ / c:( "-" BIT+ ) )?  {def ast() ast_from_percent(2, elements[1].text_value, elements[2].text_value) end}
+    end
+  rule dec_val
+    "d" a:DIGIT+ ( b:( "." DIGIT+ )+ / c:( "-" DIGIT+ ) )?  {def ast() ast_from_percent(10, elements[1].text_value, elements[2].text_value) end}
+    end
+  rule hex_val
+    "x" a:HEXDIG+ ( b:( "." HEXDIG+ )+ / c:( "-" HEXDIG+ ) )?  {def ast() ast_from_percent(16, elements[1].text_value, elements[2].text_value) end}
+    end
+  rule prose_val
+    "<" a:[ -=?-~]* ">"  {def ast() ["prose", a.text_value] end}
+  end
+  rule ALPHA
+    [A-Za-z]
+  end
+  rule BIT
+    "0" / "1"
+  end
+  rule CRLF
+    CR LF
+  end
+  rule CR
+    [\r]?
+  end
+  rule LF
+    [\n]
+  end
+  rule DIGIT
+    [0-9]
+  end
+  rule DQUOTE
+    ["]                         # "
+  end
+  rule HEXDIG
+    DIGIT / [A-Fa-f]
+  end
+  rule WSP
+    SP / HTAB
+  end
+  rule HTAB
+    [\t]
+  end
+  rule SP
+    " "
+  end
+  rule VCHAR
+    [!-~]
+  end
+  rule char_val
+    case_insensitive_string / case_sensitive_string
+  end
+  rule case_insensitive_string
+    "%i"? quoted_string  {def ast() ["ci", quoted_string.ast] end}
+  end
+  rule case_sensitive_string
+    "%s" quoted_string  {def ast() ["cs", quoted_string.ast] end}
+  end
+  rule quoted_string
+    DQUOTE [ !#-~]* DQUOTE  {def ast() elements[1].text_value end}
+           end
+  rule inline_module1
+    '{' (inline_module1 / ![{}] .)* '}'
+  end
+  rule inline_module
+    inline_module1 {def ast_wrap(a) ["im", a, text_value] end}
+    /
+    '' {def ast_wrap(a) a end}
+  end
+end
+
