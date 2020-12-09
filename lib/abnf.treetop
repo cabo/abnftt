@@ -33,7 +33,7 @@ grammar ABNF
                                                     end }
   end
   rule concatenation
-    (repetition ( c_wsp+ repetition )* c_wsp*) inline_module {
+    (repetition ( c_wsp+ repetition )* c_wsp*) inline_module c_wsp* {
       def ast
         rep2 = elements[0].elements[1].elements.map {|x| x.repetition}
         # warn ["seq!!!", elements.size, elements[0], "bar", elements[1].elements].inspect
@@ -41,7 +41,7 @@ grammar ABNF
         inline_module.ast_wrap(e.size == 1 ? e[0] : ["seq", *e])
       end
       def clean_abnf
-        elements[0].clean_abnf
+        elements[0].clean_abnf + elements[2].text_value
       end
     }
   end
