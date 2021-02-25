@@ -49,17 +49,17 @@ class ABNF
     ABNF.new(ast)
   end
 
-  attr_accessor :ast, :rules
+  attr_accessor :ast, :rules, :tree
   def initialize(ast_)
     @ast = ast_
-    tree = ast.ast
+    @tree = ast.ast
     @rules = {}
-    tree.each do |x|
+    @tree.each do |x|
       op, name, val, rest = x
       fail rest if rest
       fail op unless op == "="  # XXX
       if @rules[name]
-        fail "duplicate for name #{name}"
+        fail "duplicate rule for name #{name}"
       end
       @rules[name] = val
     end
@@ -112,4 +112,73 @@ class ABNF
       fail
     end
   end
+
+
+  def to_treetop(modname)
+    <<~EOS
+    # Encoding: UTF-8
+    grammar #{modname}
+    #{tree.map {|x| to_treetop0(x)}.join}
+    end
+  EOS
+  end
+  def to_treetop0(ast)
+    fail ast.inspect unless ast[0] == "="
+    <<~EOS
+    rule #{to_treetop1(ast[1])}
+    #{to_treetop1(ast[2])}
+    end
+  EOS
+  end
+  FIXUP_NAMES = Hash.new {|h, k| k}
+  FIXUP_NAMES.merge!({
+                       "rule" => "r__rule",
+                     })
+  def to_treetop1(ast)
+    case ast
+    when String
+      FIXUP_NAMES[ast].gsub("-", "_")
+    when Array
+      case ast[0]
+      when "alt" # ["alt", *a]
+        "(#{ast[1..-1].map {|x| to_treetop1(x)}.join(" / ")})"
+      when "seq" # ["seq", *a]
+        "(#{ast[1..-1].map {|x| to_treetop1(x)}.join(" ")})"
+      when "rep" # ["rep", s, e, a]
+        t = to_treetop1(ast[3]) || "@@@"
+        case [ast[1], ast[2]]
+        when [0, 1]
+          t + "?"
+        when [0, true]
+          t + "*"
+        when [1, true]
+          t + "+"
+        else
+          t + " #{ast[1]}..#{ast[2] == true ? '' : ast[2]}"
+        end
+      when "prose" # ["prose", text]
+        fail "prose not implemented #{ast.inspect}"
+      when "ci" # ["ci", text]
+        s = ast[1]
+        if s =~ /\A[^A-Za-z]*\z/
+          s.inspect
+        else
+          s.inspect << "i"        # could do this always, but reduce noise
+        end
+      when "cs" # ["cs", text]
+        ast[1].inspect
+      when "char-range" # ["char-range", c1, c2]
+        c1 = Regexp.quote(ast[1])
+        c2 = Regexp.quote(ast[2])
+        "[#{c1}-#{c2}]"           # XXX does that always work
+      when "im" # ["im", a, text]
+        to_treetop1(ast[1]) + " " + ast[2]
+      else
+        fail "to_treetop(#{ast.inspect})"
+      end
+    else
+      fail "to_treetop(#{ast.inspect})"
+    end
+  end
+
 end
