@@ -1,5 +1,5 @@
 require 'treetop'
-require 'abnf'
+require 'abnfgrammar'
 
 class Treetop::Runtime::SyntaxNode
   def clean_abnf
