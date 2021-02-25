@@ -55,17 +55,18 @@ grammar ABNF
                                                     s = 1
                                                     e = 1
                                                     el = elements.map {|e| e.text_value}
-                                                    if el[1] == "*"
-                                                      if el[0] != ""
-                                                        s = el[0].to_i
-                                                      else
-                                                        s = 0
-                                                      end
-                                                      if el[2] != ""
-                                                        e = el[2].to_i
-                                                      else
-                                                        e = true
-                                                      end
+                                                    if el != []
+                                                      el[2] = el[0] = el.join if el[1] != "*"
+                                                      s = if el[0] != ""
+                                                            el[0].to_i
+                                                          else
+                                                            0
+                                                          end
+                                                      e = if el[2] != ""
+                                                            el[2].to_i
+                                                          else
+                                                            true
+                                                          end
                                                     end
                                                     occ = [s, e]
                                                     if occ == [1, 1]
