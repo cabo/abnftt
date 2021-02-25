@@ -34,17 +34,21 @@ end
 class ABNF
   @@parser = ABNFGrammarParser.new
 
+  def self.reason(parser, s)
+    reason = [parser.failure_reason]
+    parser.failure_reason =~ /^(Expected .+) after/m
+    reason << "#{$1.gsub("\n", '<<<NEWLINE>>>')}:" if $1
+    if line = s.lines.to_a[parser.failure_line - 1]
+      reason << line
+      reason << "#{'~' * (parser.failure_column - 1)}^"
+    end
+    reason.join("\n")
+  end
+
   def self.from_abnf(s)
     ast = @@parser.parse s
     if !ast
-      reason = @@parser.failure_reason
-      @@parser.failure_reason =~ /^(Expected .+) after/m
-      reason << "#{$1.gsub("\n", '<<<NEWLINE>>>')}:" if $1
-      if line = s.lines.to_a[@@parser.failure_line - 1]
-        reason << line
-        reason << "#{'~' * (@@parser.failure_column - 1)}^"
-      end
-      fail reason
+      fail self.reason(@@parser, s)
     end
     ABNF.new(ast)
   end
@@ -178,6 +182,17 @@ class ABNF
       end
     else
       fail "to_treetop(#{ast.inspect})"
+    end
+  end
+
+  @@gensym = 0
+
+  attr_accessor :parser
+  def validate(s)
+    @parser ||= Treetop.load_from_string(to_treetop("ABNF_Mod" << (@@gensym += 1).to_s))
+    parser_instance ||= @parser.new
+    unless result1 = parser_instance.parse(s)
+      fail self.class.reason(parser_instance, s)
     end
   end
 
