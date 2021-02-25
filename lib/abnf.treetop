@@ -1,4 +1,4 @@
-grammar ABNF
+grammar ABNFGrammar
   rule rulelist
     ( abnf_rule / empty_line )+ { def ast() elements.map {|e| e.ast }.compact end }
   end

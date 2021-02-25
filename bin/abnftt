@@ -81,7 +81,7 @@ unless fn = ARGV[0]
 end
 outfn = fn.sub(/\.abnftt\z/, "")
 
-parser = ABNFParser.new
+parser = ABNFGrammarParser.new
 abnf_file = File.read(fn)
 ast = parser.parse abnf_file
 if ast
