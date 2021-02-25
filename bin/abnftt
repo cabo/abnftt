@@ -7,8 +7,7 @@ Encoding.default_external = Encoding::UTF_8
 
 require 'abnftt'
 
-def to_treetop(ast, ofn)
-  modname = File.basename(ofn).sub("-", "_").sub(/[^_a-zA-Z]/, "").upcase
+def to_treetop(ast, modname)
   <<~EOS
     # Encoding: UTF-8
     grammar #{modname}
@@ -91,7 +90,8 @@ if ast
   end
   # pp ast.ast
   File.open("#{outfn}.treetop", "w") do |f|
-    f.puts to_treetop(ast.ast, outfn)
+    modname = File.basename(outfn).gsub("-", "_").gsub(/[^_a-zA-Z]/, "").upcase
+    f.puts to_treetop(ast.ast, modname)
   end
   File.open("#{outfn}.abnf", "w") do |f|
     f.puts ast.clean_abnf.lines.map(&:rstrip).join("\n")
