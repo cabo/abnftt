@@ -61,12 +61,19 @@ class ABNF
     @tree.each do |x|
       op, name, val, rest = x
       fail rest if rest
-      fail op unless op == "="  # XXX
-      if @rules[name]
-        fail "duplicate rule for name #{name}"
-      end
-      @rules[name] = val
+      @rules[name] =
+        if old = @rules[name]
+          fail "duplicate rule for name #{name}" if op == "="
+          if Array === old && old[0] == "alt"
+            old.dup << val
+          else
+            ["alt", old, val]
+          end
+        else
+          val
+        end
     end
+    # warn "** rules #{rules.inspect}"
   end
 
   def generate
@@ -122,15 +129,14 @@ class ABNF
     <<~EOS
     # Encoding: UTF-8
     grammar #{modname}
-    #{tree.map {|x| to_treetop0(x)}.join}
+    #{rules.map {|k, v| to_treetop0(k, v)}.join}
     end
   EOS
   end
-  def to_treetop0(ast)
-    fail ast.inspect unless ast[0] == "="
+  def to_treetop0(k, v)
     <<~EOS
-    rule #{to_treetop1(ast[1])}
-    #{to_treetop1(ast[2])}
+    rule #{to_treetop1(k)}
+    #{to_treetop1(v)}
     end
   EOS
   end

@@ -12,7 +12,7 @@ grammar ABNFGrammar
     ALPHA ( ALPHA / DIGIT / "-" )*     {def ast() text_value end}
   end
   rule defined_as
-    c_wsp* ( "=" / "=/" ) c_wsp*    {def ast() elements[1].text_value end}
+    c_wsp* ( "=/" / "=" ) c_wsp*    {def ast() elements[1].text_value end}
   end
   rule c_wsp
     (WSP / ( c_nl WSP ))              { def ast() nil end }
