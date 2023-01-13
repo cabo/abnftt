@@ -1,10 +1,10 @@
 task :default => :build
 
-task :build => "lib/abnf.rb" do
+task :build => "lib/abnfgrammar.rb" do
   sh "gem build abnftt.gemspec"
 end
 
-file "lib/abnf.rb" => "lib/abnf.treetop" do
+file "lib/abnfgrammar.rb" => "lib/abnfgrammar.treetop" do
   sh "tt lib/abnf.treetop"
 end
 
