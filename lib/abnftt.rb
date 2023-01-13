@@ -143,6 +143,7 @@ class ABNF
   FIXUP_NAMES = Hash.new {|h, k| k}
   FIXUP_NAMES.merge!({
                        "rule" => "r__rule",
+                       "end" => "r__end",
                      })
   def to_treetop1(ast)
     case ast
