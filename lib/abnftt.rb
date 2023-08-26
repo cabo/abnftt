@@ -157,6 +157,9 @@ class ABNF
         "(#{ast[1..-1].map {|x| to_treetop1(x)}.join(" ")})"
       when "rep" # ["rep", s, e, a]
         t = to_treetop1(ast[3]) || "@@@"
+        if ast[3][0] == "rep"
+          t = "(#{t})"
+        end
         case [ast[1], ast[2]]
         when [0, 1]
           t + "?"
