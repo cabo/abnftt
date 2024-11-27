@@ -53,11 +53,17 @@ class ABNF
     ABNF.new(ast)
   end
 
+  def self.from_rules(r)
+    ABNF.new(nil, r)
+  end
+
   attr_accessor :ast, :rules, :tree
-  def initialize(ast_)
-    @ast = ast_
-    @tree = ast.ast
-    @rules = {}
+  def initialize(ast_ = nil, rules_ = {})
+    if ast_
+      @ast = ast_
+      @tree = ast.ast
+    end
+    @rules = rules_
     @tree.each do |x|
       op, name, val, rest = x
       fail rest if rest
@@ -72,7 +78,7 @@ class ABNF
         else
           val
         end
-    end
+    end if @tree
     # warn "** rules #{rules.inspect}"
   end
 
