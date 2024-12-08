@@ -44,9 +44,11 @@ class ABNF
         [4, "%s" << s.inspect]  # reduce noise if no alphabetics
       end
     in ["char-range", c1, c2]
-      nc1 = "%x" % c1.ord
-      nc2 = "%x" % c2.ord
-      [4, "%x#{nc1}-#{nc2}"]
+      nc1 = "%02x" % c1.ord
+
+      nc2 = "%02x" % c2.ord
+      nc2add = "-#{nc2}" if nc2 != nc1
+      [4, "%x#{nc1}#{nc2add}"]
     in ["rep", s, e, group]
       occur = case [s, e]
               in [1, 1];    ""
