@@ -235,4 +235,66 @@ class ABNF
     end
   end
 
+
+  def seq_rep(prod)
+    visit(prod) do |here|
+        case here
+        in ["seq", *rest]
+          rest = rest.map{|x| seq_rep(x)}
+          i = rest.size
+          while i > 1
+            j = i - 1           # end of range
+            s_end = rest[j]
+            k = j               # start of range
+            while k > 0 && rest[k-1] == s_end
+              k -= 1
+            end
+            if k != j
+              n = j - k + 1
+              rest[k, j] = [["rep", n, n, s_end]]
+            end
+            i = j - 1
+          end
+          [true, wrap_flat("seq", rest)]
+        else
+          false
+        end
+    end
+  end
+
+  # sharing
+  def count_alt(counter, prod)
+    visit(prod) do |here|
+      case here
+      in ["alt", *rest]
+        rest.each {|pr| count_alt(counter, pr)}
+        counter[here] += 1
+      else
+        false
+      end
+    end
+  end
+
+  def share_alt(prefix)
+    counter = Hash.new(0)
+    rules.each do |name, prod|
+      count_alt(counter, prod)
+    end
+    subs = {}
+    counter.to_a.select{|k, v| v > 2}.sort_by{|k, v| -v}.each_with_index do |(el, _count), i|
+      name = "#{prefix}-a#{i}"
+      rules[name] = el
+      subs[el] = name
+    end
+    rules.each do |name, prod|
+      count_alt(counter, prod)
+    end
+    rules.replace(Hash[rules.map do |k, v|
+                    [k, seq_rep(visit(v) do |prod|
+                       if (s = subs[prod]) && k != s
+                         [true, s]
+                       end
+                     end)]
+                  end])
+  end
 end
