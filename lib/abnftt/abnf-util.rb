@@ -108,7 +108,7 @@ class ABNF
       do_range(l1, r1, 10) do |l2, r2, column|
         alt << ["seq",
                 alt_ranges((l2 >> 10) + 0xD800, (r2 >> 10) + 0xD800, 4, 4),
-                ["cs", "\\u"],
+                expand_string("\\u"),
                 alt_ranges((l2 & 0x3FF) + 0xDC00, (r2 & 0x3FF) + 0xDC00, 4, 4)]
       end
     end
@@ -117,10 +117,10 @@ class ABNF
 
   def alt_ranges_modern(l, r, step = 4)
     ["seq",
-     ["cs", "{"],
+     expand_string("{"),
      ["rep", 0, true, ["cs","0"]],
      alt_ranges(l, r, 4, false),
-     ["cs", "}"]]
+     expand_string("}")]
   end
 
   # flatten_strings: reduce all strings to char-range/seq/alt
