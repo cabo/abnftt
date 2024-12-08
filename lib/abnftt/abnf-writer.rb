@@ -60,6 +60,7 @@ class ABNF
         occur = case [s, e]
                 in [1, 1];    ""
                 in [0, true]; "*"
+                in [n, ^n]; n.to_s
                 else
                   "#{s}*#{e != true ? e : ""}"
                 end
