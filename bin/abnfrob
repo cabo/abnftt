@@ -1,0 +1,130 @@
+#!/usr/bin/env ruby -Ku
+require 'pp'
+require 'yaml'
+
+Encoding.default_external = Encoding::UTF_8
+require 'optparse'
+require 'ostruct'
+
+$options = OpenStruct.new
+begin
+  op = OptionParser.new do |opts|
+    opts.banner = "Usage: abnfrob [options] file.abnf"
+    opts.on("-b", "--[no-]bap", "Pretty-print using bap and abnfbreak") do |v|
+      $options.bap = v
+    end
+    opts.on("-tFMT", "--to=FMT", [:abnf, :json, :pp, :yaml], "Target format") do |v|
+      $options.target = v
+    end
+    opts.on("-y", "--yaml", "Output YAML copy of tree") do |v|
+      $options.yaml = v
+    end
+    opts.on("-a", "--asr33", "Line-break to fit on teletype") do |v|
+      $options.asr33 = v
+    end
+    opts.on("--squash=PREFIX", String, "Squash to app-prefix") do |v|
+      $options.squash = v
+    end
+  end
+  op.parse!
+rescue Exception => e
+  warn e
+  exit 1
+end
+
+require 'abnftt'
+
+unless fn = ARGV[0]
+  warn "Usage: abnfrob grammar.abnf"
+  exit 1
+end
+unless File.extname(fn) =~ /\A.abnf/
+  warn "Usage: abnfrob grammar.abnf"
+  exit 1
+end
+outfn = (Pathname.new(File.dirname(fn)) + File.basename(fn, ".*")).to_s
+
+parser = ABNFGrammarParser.new
+abnf_file = File.read(fn)
+ast = parser.parse abnf_file
+unless ast
+  puts parser.failure_reason
+  parser.failure_reason =~ /^(Expected .+) after/m
+  puts "#{$1.gsub("\n", '<<<NEWLINE>>>')}:"
+  puts abnf_file.lines.to_a[parser.failure_line - 1]
+  puts "#{'~' * (parser.failure_column - 1)}^"
+  exit 1
+end
+
+abnf = ABNF.new(ast)
+
+if $options.yaml
+  File.open("#{outfn}.yaml", "w") do |f|
+    f.puts abnf.rules.to_yaml
+  end
+end
+
+if $options.squash
+  require 'abnftt/abnf-flattener.rb'
+  require 'abnftt/abnf-util.rb'
+  require 'abnftt/abnf-squasher.rb'
+
+  prefix = $options.squash + "-"
+
+  abnf.flatten_ops
+  abnf.flatten_strings
+
+  abnf.squash_edn_levels
+  abnf.char_range_to_string
+
+  abnf.share_alt("sq")
+
+  abnf.rules.replace(Hash[abnf.rules.map do |k, v|
+                       [k.sub(/^(?:#{prefix})?/, prefix), abnf.visit(v) do |prod|
+                          if String === prod 
+                            [true, prod.sub(/^(?:#{prefix})?/, prefix)]
+                          end
+                        end]
+                     end])
+
+  rule1 = abnf.rules.first
+  outer_name = "sq-#{rule1[0]}"
+  outer_elements = ["seq",
+                    ["cs", $options.squash+"'"],
+                    rule1[0],
+                    ["cs", "'"]
+                   ]
+  abnf.rules.replace(a = Hash[[[outer_name, outer_elements],
+                               *abnf.rules.to_a]])
+  File.open("#{outfn}-sq.yaml", "w") do |f|
+    f.puts abnf.rules.to_yaml
+  end
+end
+
+## Work on abnf.rules
+
+case $options.target
+when :pp
+  pp abnf.rules
+when :json
+  require 'neatjson'
+  puts JSON.neat_generate(abnf.rules, after_comma: 1, after_colon: 1)
+when :yaml
+  puts abnf.rules.to_yaml
+when :abnf, nil
+  require_relative '../lib/abnftt/abnf-writer.rb'
+  result = abnf.to_s
+  # TODO: open squash for output
+  # TODO: capture3 bap -k -o RFC7405, abnfbreak.rb 
+
+  if $options.asr33
+    result = abnf.breaker(result)
+  end
+
+  puts result
+  File.open("#{outfn}-sq.abnf", "w") do |f|
+    f.puts result
+  end
+else
+  warn ["Unknown target format: ", $options.target].inspect
+end

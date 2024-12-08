@@ -86,4 +86,21 @@ class ABNF
     rules.map {|k, v| write_rule(k, v) }.join("\n")
   end
 
+  # primitively break down lines so they fit on a teletype
+  def breaker(s, col = 69)
+    ret = ""
+    s.each_line do |*l|
+      while l[-1].size > col
+        breakpoint = l[-1][0...col].rindex(' ')
+        break unless breakpoint && breakpoint > 4
+        l[-1..-1] = [
+          l[-1][0...breakpoint],
+          "    " << l[-1][breakpoint+1..-1]
+        ]
+      end
+      ret << l.join("\n")
+    end
+    ret
+  end
+
 end
