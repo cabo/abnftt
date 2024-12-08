@@ -279,7 +279,7 @@ class ABNF
         case here
         in ["seq", *rest]
           rest = rest.map{|x| seq_rep(x)}
-          i = rest.size
+          i = rest.size         # behind last element
           while i > 1
             j = i - 1           # end of range
             s_end = rest[j]
@@ -289,9 +289,9 @@ class ABNF
             end
             if k != j
               n = j - k + 1
-              rest[k, j] = [["rep", n, n, s_end]]
+              rest[k..j] = [["rep", n, n, s_end]]
             end
-            i = j - 1
+            i = k               # skip element k
           end
           [true, wrap_flat("seq", rest)]
         else
