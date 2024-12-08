@@ -222,7 +222,7 @@ class ABNF
             i -= 1
           end
           [true, rest]
-        in ["char-range", chr, ^chr] if chr.between?(" ", "~")
+        in ["char-range", chr, ^chr] if chr.between?(" ", "!") || chr.between?("#", "~")
           [true, ["cs", chr]]
         else
           false
