@@ -231,10 +231,48 @@ class ABNF
   end
   def char_range_to_string
     rules.each do |name, prod|
-      rules[name] = char_range_to_string1(prod)
+      rules[name] = ci_cs_merge(detect_ci(char_range_to_string1(prod)))
     end
   end
 
+  def detect_ci(prod)
+    visit(prod) do |here|
+        case here
+        in ["alt", ["cs", c1], ["cs", c2]] if c1.downcase == c2 && c2.upcase == c1
+          [true, ["ci", c1]]
+        else
+          false
+        end
+    end
+  end
+  def ci_compat(prod)
+    case prod
+    in ["ci", s]
+      s
+    in ["cs", s] if s =~ /\A[^A-Za-z]*\z/
+      s
+    else
+      nil
+    end
+  end
+  def ci_cs_merge(prod)
+    visit(prod) do |here|
+        case here
+        in ["seq", *rest]
+          rest = rest.map{|x| ci_cs_merge(x)}
+          i = rest.size
+          while i > 1
+            if (s2 = ci_compat(rest[i-1])) && (s1 = ci_compat(rest[i-2]))
+              rest[i-2..i-1] = [["ci", s1 + s2]]
+            end
+            i -= 1
+          end
+          [true, wrap_flat("seq", rest)]
+        else
+          false
+        end
+    end
+  end
 
   def seq_rep(prod)
     visit(prod) do |here|
