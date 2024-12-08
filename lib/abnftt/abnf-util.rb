@@ -196,4 +196,43 @@ class ABNF
     end
   end
 
+  # Cleanup operations
+
+  def expand_range_into(s, op, out = [op])
+    s.each do |el|
+      case el
+      in [^op, *inner]
+        expand_range_into(inner, op, out)
+      else
+        out << char_range_to_string1(el)
+      end
+    end
+    out
+  end
+  def char_range_to_string1(prod)
+    visit(prod) do |here|
+        case here
+        in ["seq", *rest]
+          rest = expand_range_into(rest, "seq")
+          i = rest.size
+          while i > 1
+            if (rest[i-1] in ["cs", s2]) && (rest[i-2] in ["cs", s1])
+              rest[i-2..i-1] = [["cs", s1 + s2]]
+            end
+            i -= 1
+          end
+          [true, rest]
+        in ["char-range", chr, ^chr] if chr.between?(" ", "~")
+          [true, ["cs", chr]]
+        else
+          false
+        end
+    end
+  end
+  def char_range_to_string
+    rules.each do |name, prod|
+      rules[name] = char_range_to_string1(prod)
+    end
+  end
+
 end
