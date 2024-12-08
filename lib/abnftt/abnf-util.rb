@@ -94,7 +94,7 @@ class ABNF
     do_range(l.ord, r.ord, step) do |l, r, column|
       alt << hex_ranges(l, r, ndig)
     end
-    wrap("alt", alt)
+    wrap("alt", alt.reverse)    # work around prioritized choice
   end
 
   def alt_ranges_legacy(l, r)
