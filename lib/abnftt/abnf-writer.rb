@@ -1,7 +1,11 @@
 class ABNF
 
-  # TODO: write replacement for .inspect below (backslash, dquote, non-ASCII)
   # return [precedence ((2 if seq needed)), string]
+
+  def stringify(s)
+    fail "Can't stringify #{s.inspect} yet" unless s =~ /\A[ !#-~]*\z/
+    %{"#{s}"}
+  end
 
   def write_lhs(k)
       k
@@ -36,12 +40,12 @@ class ABNF
         [2, "#{groups.map{write_rhs(_1, 2)}.join(" ")}"]
       end
     in ["ci", s]
-      [4, s.inspect]
+      [4, stringify(s)]
     in ["cs", s]
       if s =~ /\A[^A-Za-z]*\z/
-        [4, s.inspect]
+        [4, stringify(s)]
       else
-        [4, "%s" << s.inspect]  # reduce noise if no alphabetics
+        [4, "%s" << stringify(s)]  # reduce noise if no alphabetics
       end
     in ["char-range", c1, c2]
       nc1 = "%02x" % c1.ord
