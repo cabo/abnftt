@@ -54,13 +54,19 @@ class ABNF
       nc2add = "-#{nc2}" if nc2 != nc1
       [4, "%x#{nc1}#{nc2add}"]
     in ["rep", s, e, group]
-      occur = case [s, e]
-              in [1, 1];    ""
-              in [0, true]; "*"
-              else
-                "#{s}*#{e != true ? e : ""}"
-              end
-      [4, "#{occur}#{write_rhs(group, 4)}"]
+      if s == 0 && e == 1
+        [4, "[#{write_rhs(group, 1)}]"]
+      else
+        occur = case [s, e]
+                in [1, 1];    ""
+                in [0, true]; "*"
+                else
+                  "#{s}*#{e != true ? e : ""}"
+                end
+        [4, "#{occur}#{write_rhs(group, 4)}"]
+      end
+    else
+      fail [:WRITE_NOMATCH, v].inspect
     end
     prec_check(ret, targetprec, prec)
   end
