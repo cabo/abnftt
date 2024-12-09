@@ -66,7 +66,7 @@ comment         = "/" *non-slash "/"
 
 gives you this `cbor-edn-h-sq.abnf` (manually line-broken for readability):
 
-```
+``` abnf
 sq-h-app-string-h = %s"h'" h-app-string-h "'"
 h-app-string-h = h-S *(h-HEXDIG h-S h-HEXDIG h-S / h-ellipsis h-S)
     [("#" / %s"\u" ("0023" / "{" *("0") "23}")) *(h-non-lf)]
@@ -109,7 +109,6 @@ h-x3f = %x33-39 / %x41-46 / %x61-66
 h-x8b = %x38-39 / %x41-42 / %x61-62
 h-xcf = %x43-46 / %x63-66
 h-xef = %x45-46 / %x65-66
-
 ```
 
 In the main EDN grammar, you can amend `app-string` to
