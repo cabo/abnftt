@@ -81,6 +81,8 @@ if $options.squash
   abnf.squash_edn_levels
   abnf.char_range_to_string
 
+  abnf.share_hex("sq")
+
   abnf.share_alt("sq")
 
   abnf.rules.replace(Hash[abnf.rules.map do |k, v|

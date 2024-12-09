@@ -335,4 +335,37 @@ class ABNF
                      end)]
                   end])
   end
+
+  def share_hex_1(prod, rules)
+    visit(prod) do |here|
+      case here
+      in ["alt",
+          ["char-range", c3l, "9"],
+          ["char-range", "A", c4r],
+          ["char-range", "a", c6r]] if c4r == c6r.upcase && c3l >= "0" && c6r <= "f"
+        name = "x#{c3l}#{c6r}"
+        rules[name] ||= here
+        [true, name]
+      in ["alt",
+          ["char-range", c4l, c4r],
+          ["char-range", c6l, c6r]] if c4r == c6r.upcase &&
+                                       c4l == c6l.upcase &&
+                                       c6l.between?("a", "f") &&
+                                       c6r.between?("a", "f")
+        name = "x#{c6l}#{c6r}"
+        rules[name] ||= here
+        [true, name]
+      else
+        false
+      end
+    end
+  end
+
+  def share_hex(_prefix)
+    newrules = {}
+    rules.each do |name, prod|
+      rules[name] = share_hex_1(prod, newrules)
+    end
+    rules.merge!(Hash[newrules.sort])
+  end
 end
