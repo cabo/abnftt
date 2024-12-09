@@ -9,14 +9,18 @@ require 'ostruct'
 $options = OpenStruct.new
 begin
   op = OptionParser.new do |opts|
+    opts.version = "(from abnftt #{Gem.loaded_specs['abnftt'].version})" rescue "unknown-version"
+
     opts.banner = "Usage: abnfrob [options] file.abnf"
-    opts.on("-b", "--[no-]bap", "Pretty-print using bap and abnfbreak") do |v|
-      $options.bap = v
+    opts.on("-b", "--bap=[OPTIONS]", "Pretty-print using bap") do |v|
+      $options.bap = true
+      $options.bap_options = v ? " #{v}" : ""
+      # warn "** bap_options #{$options.bap_options.inspect}"
     end
     opts.on("-tFMT", "--to=FMT", [:abnf, :json, :pp, :yaml], "Target format") do |v|
       $options.target = v
     end
-    opts.on("-y", "--yaml", "Output YAML copy of tree") do |v|
+    opts.on("-y", "--yaml", "Output separate YAML copy of rules") do |v|
       $options.yaml = v
     end
     opts.on("-a", "--asr33", "Line-break to fit on teletype") do |v|
@@ -27,7 +31,7 @@ begin
     end
   end
   op.parse!
-rescue Exception => e
+rescue StandardError => e
   warn e
   exit 1
 end
@@ -35,11 +39,11 @@ end
 require 'abnftt'
 
 unless fn = ARGV[0]
-  warn "Usage: abnfrob grammar.abnf"
+  warn op
   exit 1
 end
 unless File.extname(fn) =~ /\A.abnf/
-  warn "Usage: abnfrob grammar.abnf"
+  warn op
   exit 1
 end
 outfn = (Pathname.new(File.dirname(fn)) + File.basename(fn, ".*")).to_s
@@ -114,8 +118,18 @@ when :yaml
 when :abnf, nil
   require_relative '../lib/abnftt/abnf-writer.rb'
   result = abnf.to_s
-  # TODO: open squash for output
-  # TODO: capture3 bap -k -o RFC7405, abnfbreak.rb 
+
+  if $options.bap
+    require 'open3'
+    result, err, status =
+                 Open3.capture3("bap -o RFC7405#{$options.bap_options}",
+                                stdin_data: result)
+    warn err.gsub(/^/, "** ") unless err == ""
+    unless status.success?
+      warn "*** Giving up"
+      exit 1
+    end
+  end
 
   if $options.asr33
     result = abnf.breaker(result)
