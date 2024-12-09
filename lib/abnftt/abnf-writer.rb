@@ -55,7 +55,7 @@ class ABNF
       [4, "%x#{nc1}#{nc2add}"]
     in ["rep", s, e, group]
       if s == 0 && e == 1
-        [4, "[#{write_rhs(group, 1)}]"]
+        [4, "[#{write_rhs(group)}]"]
       else
         occur = case [s, e]
                 in [1, 1];    ""
