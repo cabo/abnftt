@@ -83,7 +83,7 @@ class ABNF
   end
 
   def to_s
-    rules.map {|k, v| write_rule(k, v) }.join("\n")
+    rules.map {|k, v| write_rule(k, v) }.join("\n").sub(/.\z/) {$& << "\n"}
   end
 
   # primitively break down lines so they fit on a teletype
