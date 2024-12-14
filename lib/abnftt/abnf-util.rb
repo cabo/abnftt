@@ -355,6 +355,10 @@ class ABNF
         name = "x#{c6l}#{c6r}"
         rules[name] ||= here
         [true, name]
+      in ["char-range", l, r] if l >= "0" && r <= "9"
+        name = "x#{l}#{r}"
+        rules[name] ||= here
+        [true, name]
       else
         false
       end
