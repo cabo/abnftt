@@ -347,6 +347,40 @@ class ABNF
                        end
                      end)]
                   end])
+    replacements = Hash[
+      rules.map{|k, v|
+        [v, k] if String === v && /^sq-a\d+$/ === v
+      }.compact]
+    # warn [:REPLA, replacements].inspect
+    used = {}
+    used[rules.first.first] = true
+    rules.each do |k, v|
+      visit(v) do |here|
+        if String === here
+          if r = replacements[here]
+            used[r] = true
+          else
+            used[here] = true
+          end
+        end
+      end
+    end
+    # TODO: Should not do a h-x09
+    # warn [:USED, used].inspect
+    rules.replace(Hash[rules.map {|k, v|
+                         unless replacements[k] || !used[k]
+                           if r = replacements[v]
+                             v = rules[v]
+                           end
+                           v = visit(v) do |here|
+                             if String === here && (r = replacements[here])
+                               # warn [:R, v, r].inspect
+                               [true, r]
+                             end
+                           end
+                           [k, v]
+                         end
+                       }.compact])
   end
 
   def share_hex_1(prod, rules)
