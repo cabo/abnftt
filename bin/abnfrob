@@ -26,6 +26,9 @@ begin
     opts.on("-a", "--asr33", "Line-break to fit on teletype") do |v|
       $options.asr33 = v
     end
+    opts.on("--ascii", "No escaping of ASCII printables %x20-7e") do |v|
+      $options.ascii = v
+    end
     opts.on("--squash=PREFIX", String, "Squash to app-prefix") do |v|
       $options.squash = v
     end
@@ -78,7 +81,7 @@ if $options.squash
   abnf.flatten_ops
   abnf.flatten_strings
 
-  abnf.squash_edn_levels
+  abnf.squash_edn_levels(ascii: $options.ascii)
   abnf.char_range_to_string
 
   abnf.share_hex("sq")

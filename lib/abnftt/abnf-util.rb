@@ -32,6 +32,19 @@ class ABNF
     end
   end
 
+  def do_ranges_outside(cr, l, r)
+    if cr[2] < l || cr[1] > r # outside
+      yield cr[1].ord, cr[2].ord
+    else
+      if cr[1] < l
+        yield cr[1].ord, l.ord - 1
+      end
+      if cr[2] > r
+        yield r.ord + 1, cr[2].ord
+      end
+    end
+  end
+
   # Utilities for creating hexadecimal rules from unsigned integers
 
   def hexdig_range(l, r)

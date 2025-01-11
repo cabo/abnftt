@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = "abnftt"
-  s.version = "0.2.6"
+  s.version = "0.2.7"
   s.summary = "RFC 5234+7405 ABNF to Treetop"
   s.description = %q{Less shifty support for tools based on IETF's ABNF}
   s.author = "Carsten Bormann"
