@@ -402,10 +402,10 @@ class ABNF
         name = "x#{c6l}#{c6r}"
         rules[name] ||= here
         [true, name]
-      in ["char-range", l, r] if l >= "0" && r <= "9"
-        name = "x#{l}#{r}"
-        rules[name] ||= here
-        [true, name]
+      # in ["char-range", l, r] if l >= "0" && r <= "9"
+      #   name = "x#{l}#{r}"
+      #   rules[name] ||= here
+      #   [true, name]
       in ["seq", ["cs", "\\u"], *rest]
         suff = "0"
         rest = rest.map {|r| share_hex_1(r, rules) }
