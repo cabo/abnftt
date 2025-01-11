@@ -372,6 +372,29 @@ class ABNF
         name = "x#{l}#{r}"
         rules[name] ||= here
         [true, name]
+      in ["seq", ["cs", "\\u"], *rest]
+        suff = "0"
+        case rest
+        in [["alt", [/^c./, hex], *], *]
+          name = "u-#{hex}"
+          while rules[name] && rules[name] != here
+            name = "u-#{hex}-#{suff.succ!}"
+          end
+        in [["alt", ["seq", [/^c./, hex], *], *], *]
+          name = "u-#{hex}x"
+          while rules[name] && rules[name] != here
+            name = "u-#{hex}x-#{suff.succ!}"
+          end
+        else
+          # require 'neatjson'
+          # warn ::JSON.neat_generate(here)
+          name = "u-#{suff.succ!}"
+          while rules[name] && rules[name] != here
+            name = "u-#{suff.succ!}"
+          end
+        end
+        rules[name] ||= here
+        [true, name]
       else
         false
       end
