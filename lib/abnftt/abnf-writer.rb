@@ -93,6 +93,11 @@ class ABNF
       while l[-1].size > col
         breakpoint = l[-1][0...col].rindex(' ')
         break unless breakpoint && breakpoint > 4
+        while (partial = l[-1][0...breakpoint]).count('"').odd?
+          break1 = partial.rindex('"')
+          breakpoint = l[-1][0...break1].rindex(' ')
+          break unless breakpoint && breakpoint > 4
+        end
         l[-1..-1] = [
           l[-1][0...breakpoint],
           "    " << l[-1][breakpoint+1..-1]
