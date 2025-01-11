@@ -253,6 +253,21 @@ class ABNF
         case here
         in ["alt", ["cs", c1], ["cs", c2]] if c1.downcase == c2 && c2.upcase == c1
           [true, ["ci", c1]]
+        in [*rest1, ["cs", c1], ["cs", c2], *rest2] if c1.downcase == c2 && c2.upcase == c1
+          # warn [:PEEP, rest1, c1, c2, rest2].inspect
+          if rest1[0] == "alt"
+            [true, detect_ci([*rest1, ["ci", c1], *rest2])]
+          else
+            false
+          end
+        # This isn't complete...
+        in [*rest1, ["cs", c0], ["cs", c1], ["cs", c2], *rest2] if c1.downcase == c2 && c2.upcase == c1
+          # warn [:PEEP2, rest1, c0, c1, c2, rest2].inspect
+          if rest1[0] == "alt"
+            [true, detect_ci([*rest1, ["cs", c0], ["ci", c1], *rest2])]
+          else
+            false
+          end
         else
           false
         end
