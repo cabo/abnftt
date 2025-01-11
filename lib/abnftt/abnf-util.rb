@@ -374,6 +374,7 @@ class ABNF
         [true, name]
       in ["seq", ["cs", "\\u"], *rest]
         suff = "0"
+        rest = rest.map {|r| share_hex_1(r, rules) }
         case rest
         in [["alt", [/^c./, hex], *], *]
           name = "u-#{hex}"
