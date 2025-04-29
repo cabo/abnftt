@@ -153,7 +153,7 @@ grammar ABNFGrammar
     '{' (inline_module1 / ![{}] .)* '}'
   end
   rule inline_module
-    inline_module1 {def ast_wrap(a) ["im", a, text_value] end}
+    '&'? inline_module1 {def ast_wrap(a) ["im", a, text_value] end}
     /
     '' {def ast_wrap(a) a end}
   end
