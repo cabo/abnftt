@@ -9,6 +9,6 @@ task :build => "lib/abnfgrammar.rb" do
 end
 
 file "lib/abnfgrammar.rb" => "lib/abnfgrammar.treetop" do
-  sh "tt lib/abnf.treetop"
+  sh "tt lib/abnfgrammar.treetop"
 end
 
